@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a237e">
+  <link rel="manifest" href="/manifest.json">
+  <title>HexR</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <div class="logo">⬡ HexR</div>
+    <p class="tagline">Your personal hexagonal code</p>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="encoder">Encode</button>
+    <button class="tab"        data-tab="scanner">Scan</button>
+  </nav>
+
+  <!-- ── Encoder ─────────────────────────────────────── -->
+  <section id="encoder" class="panel active">
+    <label for="enc-input">Text to encode</label>
+    <textarea id="enc-input" rows="4" placeholder="Type anything…"></textarea>
+    <div class="char-count"><span id="char-count">0</span> characters</div>
+
+    <button id="enc-btn" class="primary-btn">Generate HexR</button>
+
+    <div id="enc-result" class="result hidden">
+      <img id="enc-img" alt="HexR code" />
+      <a id="enc-download" class="secondary-btn" download="hexr.png">Download PNG</a>
+    </div>
+
+    <div id="enc-error" class="error hidden"></div>
+    <div id="enc-spinner" class="spinner hidden"></div>
+  </section>
+
+  <!-- ── Scanner ─────────────────────────────────────── -->
+  <section id="scanner" class="panel">
+    <p class="hint">Open a HexR image from your gallery or take a photo.</p>
+
+    <label class="primary-btn file-label" for="scan-file">
+      📷 Choose Image / Camera
+    </label>
+    <input type="file" id="scan-file" accept="image/*" hidden>
+
+    <div id="scan-preview-wrap" class="hidden">
+      <img id="scan-preview" alt="Selected image" />
+      <button id="scan-btn" class="primary-btn">Decode</button>
+    </div>
+
+    <div id="scan-result" class="result hidden">
+      <div class="decoded-label">Decoded text:</div>
+      <div id="scan-text" class="decoded-text"></div>
+      <button id="scan-copy" class="secondary-btn">Copy</button>
+    </div>
+
+    <div id="scan-error" class="error hidden"></div>
+    <div id="scan-spinner" class="spinner hidden"></div>
+  </section>
+
+  <script src="/app.js"></script>
+</body>
+</html>
