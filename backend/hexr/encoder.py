@@ -107,7 +107,7 @@ def render_hexr(text, output_path="hexr_encoded.png", cell_size=14):
     ax.set_xlim(min(xs) - margin, max(xs) + margin)
     ax.set_ylim(min(ys) - margin, max(ys) + margin)
 
-    plt.title(f'HexR — {repr(text)}', fontsize=11)
+    plt.title('HexR', fontsize=11)
     plt.savefig(output_path, dpi=150, bbox_inches='tight', facecolor='#f0f0f0')
     plt.close()
     Image.open(output_path).convert('RGB').save(output_path)   # strip alpha channel
