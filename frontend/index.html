@@ -38,12 +38,15 @@
 
   <!-- ── Scanner ─────────────────────────────────────── -->
   <section id="scanner" class="panel">
-    <p class="hint">Open a HexR image from your gallery or take a photo.</p>
+    <p class="hint">Take a photo of a HexR code or pick one from your gallery.</p>
 
-    <label class="primary-btn file-label" for="scan-file">
-      📷 Choose Image / Camera
-    </label>
-    <input type="file" id="scan-file" accept="image/*" hidden>
+    <div class="scan-btns">
+      <label class="primary-btn file-label" for="scan-camera">📷 Camera</label>
+      <input type="file" id="scan-camera" accept="image/*" capture="environment" hidden>
+
+      <label class="secondary-btn file-label" for="scan-gallery">🖼 Gallery</label>
+      <input type="file" id="scan-gallery" accept="image/*" hidden>
+    </div>
 
     <div id="scan-preview-wrap" class="hidden">
       <img id="scan-preview" alt="Selected image" />

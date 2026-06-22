@@ -122,6 +122,15 @@ textarea:focus { outline: none; border-color: var(--blue); }
 
 .file-label { cursor: pointer; }
 
+.scan-btns {
+  display: flex;
+  gap: 0.75rem;
+}
+.scan-btns .primary-btn,
+.scan-btns .secondary-btn {
+  flex: 1;
+}
+
 /* ── Results ────────────────────────────────── */
 .result {
   display: flex;
