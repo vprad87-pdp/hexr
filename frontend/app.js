@@ -58,32 +58,18 @@ const scanCamera      = document.getElementById('scan-camera');
 const scanGallery     = document.getElementById('scan-gallery');
 const scanPreviewWrap = document.getElementById('scan-preview-wrap');
 const scanPreview     = document.getElementById('scan-preview');
-const scanBtn         = document.getElementById('scan-btn');
 const scanResult      = document.getElementById('scan-result');
 const scanText        = document.getElementById('scan-text');
 const scanCopy        = document.getElementById('scan-copy');
 const scanError       = document.getElementById('scan-error');
 const scanSpinner     = document.getElementById('scan-spinner');
 
-let selectedFile = null;
-
-function onFileSelected(file) {
+async function onFileSelected(file) {
   if (!file) return;
-  selectedFile = file;
   hide(scanResult); hide(scanError);
   scanPreview.src = URL.createObjectURL(file);
   show(scanPreviewWrap);
-}
-
-scanCamera.addEventListener('change',  () => onFileSelected(scanCamera.files[0]));
-scanGallery.addEventListener('change', () => onFileSelected(scanGallery.files[0]));
-
-scanBtn.addEventListener('click', async () => {
-  const file = selectedFile;
-  if (!file) return;
-
-  hide(scanResult); hide(scanError);
-  show(scanSpinner); scanBtn.disabled = true;
+  show(scanSpinner);
 
   try {
     const form = new FormData();
@@ -96,9 +82,12 @@ scanBtn.addEventListener('click', async () => {
   } catch (err) {
     showError(scanError, err.message);
   } finally {
-    hide(scanSpinner); scanBtn.disabled = false;
+    hide(scanSpinner);
   }
-});
+}
+
+scanCamera.addEventListener('change',  () => onFileSelected(scanCamera.files[0]));
+scanGallery.addEventListener('change', () => onFileSelected(scanGallery.files[0]));
 
 scanCopy.addEventListener('click', async () => {
   await navigator.clipboard.writeText(scanText.textContent).catch(() => {});
