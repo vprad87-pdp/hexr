@@ -131,6 +131,28 @@ textarea:focus { outline: none; border-color: var(--blue); }
   flex: 1;
 }
 
+/* ── Camera overlay ─────────────────────────── */
+#camera-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 1000;
+  flex-direction: column;
+}
+#camera-video {
+  flex: 1;
+  width: 100%;
+  object-fit: cover;
+}
+.camera-controls {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: #1a237e;
+}
+.camera-controls .primary-btn,
+.camera-controls .secondary-btn { flex: 1; }
+
 /* ── Results ────────────────────────────────── */
 .result {
   display: flex;

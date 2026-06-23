@@ -54,7 +54,7 @@ encBtn.addEventListener('click', async () => {
 });
 
 // ── Scanner ───────────────────────────────────────────────────────────────────
-const scanCamera      = document.getElementById('scan-camera');
+const scanCameraBtn   = document.getElementById('scan-camera-btn');
 const scanGallery     = document.getElementById('scan-gallery');
 const scanPreviewWrap = document.getElementById('scan-preview-wrap');
 const scanPreview     = document.getElementById('scan-preview');
@@ -65,7 +65,14 @@ const scanCopy        = document.getElementById('scan-copy');
 const scanError       = document.getElementById('scan-error');
 const scanSpinner     = document.getElementById('scan-spinner');
 
+const cameraOverlay   = document.getElementById('camera-overlay');
+const cameraVideo     = document.getElementById('camera-video');
+const cameraCapture   = document.getElementById('camera-capture');
+const cameraCancel    = document.getElementById('camera-cancel');
+const cameraCanvas    = document.getElementById('camera-canvas');
+
 let selectedFile = null;
+let cameraStream = null;
 
 function onFileSelected(file) {
   if (!file) return;
@@ -75,7 +82,35 @@ function onFileSelected(file) {
   show(scanPreviewWrap);
 }
 
-scanCamera.addEventListener('change',  () => onFileSelected(scanCamera.files[0]));
+function stopCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  hide(cameraOverlay);
+}
+
+scanCameraBtn.addEventListener('click', async () => {
+  hide(scanError);
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    cameraVideo.srcObject = cameraStream;
+    cameraOverlay.style.display = 'flex';
+    cameraOverlay.classList.remove('hidden');
+  } catch {
+    showError(scanError, 'Camera not available — use Gallery instead.');
+  }
+});
+
+cameraCapture.addEventListener('click', () => {
+  cameraCanvas.width  = cameraVideo.videoWidth;
+  cameraCanvas.height = cameraVideo.videoHeight;
+  cameraCanvas.getContext('2d').drawImage(cameraVideo, 0, 0);
+  cameraCanvas.toBlob(blob => {
+    onFileSelected(new File([blob], 'camera.jpg', { type: 'image/jpeg' }));
+    stopCamera();
+  }, 'image/jpeg', 0.95);
+});
+
+cameraCancel.addEventListener('click', stopCamera);
+
 scanGallery.addEventListener('change', () => onFileSelected(scanGallery.files[0]));
 
 scanBtn.addEventListener('click', async () => {

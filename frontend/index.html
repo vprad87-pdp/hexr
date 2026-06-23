@@ -41,8 +41,7 @@
     <p class="hint">Take a photo of a HexR code or pick one from your gallery.</p>
 
     <div class="scan-btns">
-      <label class="primary-btn file-label" for="scan-camera">📷 Camera</label>
-      <input type="file" id="scan-camera" accept="image/*" capture="environment" hidden>
+      <button id="scan-camera-btn" class="primary-btn">📷 Camera</button>
 
       <label class="secondary-btn file-label" for="scan-gallery">🖼 Gallery</label>
       <input type="file" id="scan-gallery" accept="image/*" hidden>
@@ -62,6 +61,16 @@
     <div id="scan-error" class="error hidden"></div>
     <div id="scan-spinner" class="spinner hidden"></div>
   </section>
+
+  <!-- Camera overlay -->
+  <div id="camera-overlay" class="hidden">
+    <video id="camera-video" autoplay playsinline muted></video>
+    <div class="camera-controls">
+      <button id="camera-capture" class="primary-btn">📸 Capture</button>
+      <button id="camera-cancel"  class="secondary-btn">✕ Cancel</button>
+    </div>
+  </div>
+  <canvas id="camera-canvas" hidden></canvas>
 
   <script src="/app.js"></script>
 </body>
