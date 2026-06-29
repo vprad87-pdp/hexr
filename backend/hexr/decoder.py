@@ -123,40 +123,53 @@ def _compute_grid_params(centroids):
 # and (3,0) would be, and sample those pixels directly.
 # The correct N gives purple pixels at both positions.
 
-def _find_scale(img_arr, f0, cx, cy, sNe):
+def _find_scale(img_arr, cx, cy, sN):
     """
-    Scan from finder centroid f0 toward the grid centre.
-    The ring-0 hexagon (dark blue, size 0.95·S) ends at S·√3/2·0.95 pixels
-    in the inward direction (flat-top hex boundary at 210° = edge midpoint).
-    The first non-blue pixel gives S directly; N = round(sNe/S) + FINDER_RADIUS.
+    Determine S and N by trying each candidate N and verifying the timing spoke.
+    Timing cells at (step, 0): odd steps are purple (timing_b), even are pale.
+    Only the correct N gives S = sN/(N-FR) that lands on the right pixels.
     """
     from hexr.finder import FINDER_RADIUS as FR
-    fx, fy = f0
-    dist = math.hypot(cx - fx, cy - fy)
-    dx   = (cx - fx) / dist          # ≈ -√3/2
-    dy   = (cy - fy) / dist          # ≈ +0.5
 
     h, w = img_arr.shape[:2]
-    # Extent of ring-0 hex in the inward direction = 0.95 · S · cos(30°)
-    _SCALE_FACTOR = 0.95 * math.sqrt(3) / 2   # ≈ 0.822
+    sqrt3_2 = math.sqrt(3) / 2
 
-    for d in range(2, min(int(dist), int(sNe))):
-        px = int(round(fx + d * dx))
-        py = int(round(fy + d * dy))
-        if not (0 <= px < w and 0 <= py < h):
+    def _is_purple(step, S):
+        tx = cx + S * 1.5 * step
+        ty = cy - S * sqrt3_2 * step
+        ix, iy = int(round(tx)), int(round(ty))
+        if not (0 <= ix < w and 0 <= iy < h):
+            return None
+        rv = int(img_arr[iy, ix, 0])
+        gv = int(img_arr[iy, ix, 1])
+        bv = int(img_arr[iy, ix, 2])
+        return rv > gv * 1.5 and bv > 100  # timing_b = #4a148c
+
+    for N in range(8, 42):
+        k = N - FR
+        if k <= 0:
+            continue
+        S = sN / k
+        if S < 4:
             break
-        rv = int(img_arr[py, px, 0])
-        gv = int(img_arr[py, px, 1])
-        bv = int(img_arr[py, px, 2])
-        is_blue = bv > 100 and bv > rv * 1.5 and bv > gv * 1.3
-        if not is_blue:
-            # Actual boundary is between d-1 (last blue) and d (first non-blue).
-            # Best estimate: d - 0.5.
-            S = (d - 0.5) / _SCALE_FACTOR
-            N = round(sNe / S) + FR
+
+        stop = N - 2 * FR - 1
+        if stop < 3:
+            continue
+
+        ok = True
+        for step in range(1, min(stop, 15) + 1):
+            result = _is_purple(step, S)
+            if result is None:
+                ok = False
+                break
+            if result != (step % 2 == 1):   # odd=purple, even=pale
+                ok = False
+                break
+        if ok:
             return S, N
 
-    raise ValueError("Could not measure ring-0 boundary — is this a valid HexR image?")
+    raise ValueError("Could not determine grid scale from timing cells")
 
 
 # ── Block 4: Sample + decode ──────────────────────────────────────────────────
@@ -193,7 +206,7 @@ def decode_hexr(image_path):
     cx, cy, sN, f0     = _compute_grid_params(centroids)
 
     # 2. Scale and radius
-    S, N = _find_scale(img_arr, f0, cx, cy, sN)
+    S, N = _find_scale(img_arr, cx, cy, sN)
 
     print(f"  Finder centroids : {[(round(p[0],1), round(p[1],1)) for p in centroids]}")
     print(f"  Grid centre      : ({cx:.1f}, {cy:.1f})")
