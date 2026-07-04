@@ -15,9 +15,9 @@ from hexr.reed_solomon import decode as rs_decode
 # Fix: cluster nearby blobs together; each cluster = one finder.
 
 def _find_finder_centroids(img_arr):
-    r = img_arr[:, :, 0].astype(float)
-    g = img_arr[:, :, 1].astype(float)
-    b = img_arr[:, :, 2].astype(float)
+    r = img_arr[:, :, 0].astype(np.float32)
+    g = img_arr[:, :, 1].astype(np.float32)
+    b = img_arr[:, :, 2].astype(np.float32)
 
     # Exclude timing_b (#4a148c, R=74>G*1.5) while keeping finder_b (#1a237e, R=26<G*1.5)
     blue_mask = (b > 100) & (b > r * 1.5) & (b > g * 1.3) & ~(r > g * 1.5)
@@ -236,9 +236,21 @@ def _sample_bit(img_arr, cx, cy, S, q, r):
     return -1      # grey pad (≈232)
 
 
+# Cap the working resolution. A HexR grid needs ~1500px to resolve every cell;
+# phone photos are 4000px+, which would blow the server's memory (three float64
+# channel copies of a 12MP image are ~288MB). Downscale before any processing.
+MAX_DECODE_DIM = 1600
+
+
 def decode_hexr(image_path):
-    """Load a HexR PNG and return the decoded text string."""
-    img     = Image.open(image_path).convert('RGB')
+    """Load a HexR image and return the decoded text string."""
+    img = Image.open(image_path)
+    # draft() lets JPEG decode straight to a reduced size (memory-efficient for
+    # large camera photos); thumbnail() finishes the job for any format.
+    img.draft('RGB', (MAX_DECODE_DIM, MAX_DECODE_DIM))
+    img = img.convert('RGB')
+    if max(img.size) > MAX_DECODE_DIM:
+        img.thumbnail((MAX_DECODE_DIM, MAX_DECODE_DIM), Image.LANCZOS)
     img_arr = np.array(img)
 
     # 1. Locate finders
