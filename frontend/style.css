@@ -158,6 +158,15 @@ textarea:focus { outline: none; border-color: var(--blue); }
   border: 1px solid #e0e0e0;
 }
 
+#enc-share { width: 100%; }
+
+.enc-actions {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+}
+.enc-actions .secondary-btn { flex: 1; }
+
 .decoded-label { font-weight: 600; font-size: 0.9rem; color: var(--muted); align-self: flex-start; }
 .decoded-text {
   font-size: 1.1rem;
