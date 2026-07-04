@@ -150,7 +150,14 @@ def _find_scale(img_arr, cx, cy, sN):
     def _is_purple(step, S):
         return _sample_purple(cx + S * 1.5 * step, cy - S * sqrt3_2 * step)
 
-    for N in range(8, 42):
+    # Return the LARGEST N that passes, not the first. A small candidate N only
+    # has to validate a few timing steps (stop = N-2·FR-1), so with a coincidental
+    # large S those few can alternate purple/pale by luck (observed: N=9,S=112 on a
+    # real N=51 grid). The true N validates the whole spoke; any N larger than the
+    # true one fails because it samples past the spoke's end. So the largest passing
+    # N is the correct one.
+    best = None
+    for N in range(8, 80):
         k = N - FR
         if k <= 0:
             continue
@@ -183,7 +190,10 @@ def _find_scale(img_arr, cx, cy, sN):
         if _is_purple(0.25, S):
             continue
 
-        return S, N
+        best = (S, N)   # keep overwriting → ends up as the largest passing N
+
+    if best is not None:
+        return best
 
     raise ValueError("Could not determine grid scale from timing cells")
 

@@ -6,6 +6,13 @@ from hexr.grid import hex_to_pixel, hex_corners
 from hexr.finder import finder_cells, timing_cells
 
 
+# Maximum characters we accept. Beyond this the grid/image grows large (more
+# memory) and camera scanning of the denser grid gets unreliable, so we cap it
+# rather than chase the edge. Clean decode is reliable well past this; 500 keeps
+# images small and leaves comfortable margin for real-world camera scans.
+MAX_CHARS = 500
+
+
 # Cell colours
 _COLORS = {
     'data_1':    '#111111',   # data bit 1 — black
@@ -58,6 +65,11 @@ def render_hexr(text, output_path="hexr_encoded.png", cell_size=16):
     early. Pure fills eliminate that entirely. ``cell_size`` is now the pixel scale
     directly (1 hex unit = cell_size px), so the decoder recovers S ≈ cell_size.
     """
+    if len(text) > MAX_CHARS:
+        raise ValueError(
+            f"Text is {len(text)} characters; the limit is {MAX_CHARS}. "
+            f"Please shorten it by {len(text) - MAX_CHARS}.")
+
     bits   = text_to_bits(text)
     n_bits = len(bits)
 
