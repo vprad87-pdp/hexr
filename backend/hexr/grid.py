@@ -1,7 +1,4 @@
 import math
-import matplotlib.pyplot as plt
-from matplotlib.patches import Polygon
-from matplotlib.collections import PatchCollection
 
 
 # ── Block 1: Coordinate generation ───────────────────────────────────────────
@@ -40,6 +37,8 @@ def hex_corners(cx, cy, size):
 
 def render_grid(radius=5, cell_size=20, output_path="hexr_grid.png"):
     """Render a blank HexR grid and save it as a PNG."""
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Polygon
     cells = hex_cells(radius)
 
     fig, ax = plt.subplots(figsize=(10, 10))

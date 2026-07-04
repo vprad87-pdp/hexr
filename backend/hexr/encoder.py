@@ -1,8 +1,4 @@
-import matplotlib
-matplotlib.use('Agg')   # headless backend — required on servers with no display
-import matplotlib.pyplot as plt
-from matplotlib.patches import Polygon
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from hexr.reed_solomon import encode, ECC_SYMBOLS
 from hexr.traversal import spiral_traversal
@@ -52,8 +48,16 @@ def text_to_bits(text):
 
 # ── Block 3: Render ───────────────────────────────────────────────────────────
 
-def render_hexr(text, output_path="hexr_encoded.png", cell_size=14):
-    """Encode text and render a HexR image with finder hexagons and timing spoke."""
+def render_hexr(text, output_path="hexr_encoded.png", cell_size=16):
+    """Encode text and render a HexR image with finder hexagons and timing spoke.
+
+    Rendered with PIL (ImageDraw) rather than matplotlib: PIL fills polygons with
+    NO anti-aliasing, so every interior pixel is a pure colour. Matplotlib blends a
+    5–6px gradient across cell edges, which pushed the centre pixels of white cells
+    adjacent to dark cells into the grey band (100..244) and made the decoder stop
+    early. Pure fills eliminate that entirely. ``cell_size`` is now the pixel scale
+    directly (1 hex unit = cell_size px), so the decoder recovers S ≈ cell_size.
+    """
     bits   = text_to_bits(text)
     n_bits = len(bits)
 
@@ -75,13 +79,28 @@ def render_hexr(text, output_path="hexr_encoded.png", cell_size=14):
     print(f"Reserved  : {len(reserved)} cells (finders + timing)")
     print(f"Data cells: {len(data_cells)} available, {n_bits} used")
 
-    fig, ax = plt.subplots(figsize=(8, 8))
-    ax.set_aspect('equal')
-    ax.axis('off')
+    # Cell centres in hex-pixel space (y-up).
+    positions = {(q, r): hex_to_pixel(q, r, cell_size) for (q, r) in all_cells}
+    xs = [p[0] for p in positions.values()]
+    ys = [p[1] for p in positions.values()]
+    margin = cell_size * 2
+    min_x, max_x = min(xs) - margin, max(xs) + margin
+    min_y, max_y = min(ys) - margin, max(ys) + margin
+    width  = int(round(max_x - min_x))
+    height = int(round(max_y - min_y))
+
+    def to_img(px, py):
+        # Map hex-pixel (y-up) to image pixel (y-down); matches decoder's y-flip.
+        return (px - min_x, max_y - py)
+
+    img  = Image.new('RGB', (width, height), '#f0f0f0')
+    draw = ImageDraw.Draw(img)
+    circ = cell_size * 0.95   # 0.95 leaves a thin gap between adjacent cells
 
     for (q, r) in all_cells:
-        cx, cy   = hex_to_pixel(q, r, cell_size)
-        corners  = hex_corners(cx, cy, cell_size * 0.95)
+        cx, cy      = positions[(q, r)]
+        corners     = hex_corners(cx, cy, circ)
+        img_corners = [to_img(x, y) for (x, y) in corners]
 
         if (q, r) in finders:
             face = _COLORS['finder_b'] if finders[(q,r)] == 'black' else _COLORS['finder_w']
@@ -96,21 +115,9 @@ def render_hexr(text, output_path="hexr_encoded.png", cell_size=14):
             face = _COLORS['unused']
             edge = '#cccccc'
 
-        patch = Polygon(corners, closed=True,
-                        facecolor=face, edgecolor=edge, linewidth=0.3)
-        ax.add_patch(patch)
+        draw.polygon(img_corners, fill=face, outline=edge)
 
-    all_px = [hex_to_pixel(q, r, cell_size) for q, r in all_cells]
-    xs = [p[0] for p in all_px]
-    ys = [p[1] for p in all_px]
-    margin = cell_size * 2
-    ax.set_xlim(min(xs) - margin, max(xs) + margin)
-    ax.set_ylim(min(ys) - margin, max(ys) + margin)
-
-    plt.title('HexR', fontsize=11)
-    plt.savefig(output_path, dpi=150, bbox_inches='tight', facecolor='#f0f0f0')
-    plt.close()
-    Image.open(output_path).convert('RGB').save(output_path)   # strip alpha channel
+    img.save(output_path)
     print(f"Saved     : {output_path}\n")
     return output_path
 

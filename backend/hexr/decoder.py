@@ -128,22 +128,27 @@ def _find_scale(img_arr, cx, cy, sN):
     Determine S and N by trying each candidate N and verifying the timing spoke.
     Timing cells at (step, 0): odd steps are purple (timing_b), even are pale.
     Only the correct N gives S = sN/(N-FR) that lands on the right pixels.
+
+    Anti-resonance guard: wrong N with S = k*S_correct (integer k≥3) also passes
+    the alternating check, but has extra purple cells between sampled steps.
+    Scanning t ∈ {0.6,0.7,0.8,0.9} between step-1 and step-2 detects these.
     """
     from hexr.finder import FINDER_RADIUS as FR
 
     h, w = img_arr.shape[:2]
     sqrt3_2 = math.sqrt(3) / 2
 
-    def _is_purple(step, S):
-        tx = cx + S * 1.5 * step
-        ty = cy - S * sqrt3_2 * step
-        ix, iy = int(round(tx)), int(round(ty))
+    def _sample_purple(x, y):
+        ix, iy = int(round(x)), int(round(y))
         if not (0 <= ix < w and 0 <= iy < h):
             return None
         rv = int(img_arr[iy, ix, 0])
         gv = int(img_arr[iy, ix, 1])
         bv = int(img_arr[iy, ix, 2])
         return rv > gv * 1.5 and bv > 100  # timing_b = #4a148c
+
+    def _is_purple(step, S):
+        return _sample_purple(cx + S * 1.5 * step, cy - S * sqrt3_2 * step)
 
     for N in range(8, 42):
         k = N - FR
@@ -157,17 +162,28 @@ def _find_scale(img_arr, cx, cy, sN):
         if stop < 3:
             continue
 
+        # All timing cells must alternate: odd=purple, even=pale
         ok = True
-        for step in range(1, min(stop, 15) + 1):
+        for step in range(1, stop + 1):
             result = _is_purple(step, S)
             if result is None:
                 ok = False
                 break
-            if result != (step % 2 == 1):   # odd=purple, even=pale
+            if result != (step % 2 == 1):
                 ok = False
                 break
-        if ok:
-            return S, N
+        if not ok:
+            continue
+
+        # Anti-resonance check at step 0.25 (well inside the centre data cell).
+        # Distance from centre = 0.25·1.732·S = 0.433·S < 0.823·S (apothem).
+        # For correct N: always inside (0,0) data cell — never purple.
+        # For resonant false-positive (S = k·S_true, k odd ≥ 3): step 0.25
+        # maps to actual q = 0.25·k ≥ 0.75 — inside the actual q=1 timing cell.
+        if _is_purple(0.25, S):
+            continue
+
+        return S, N
 
     raise ValueError("Could not determine grid scale from timing cells")
 
@@ -176,24 +192,38 @@ def _find_scale(img_arr, cx, cy, sN):
 
 def _sample_bit(img_arr, cx, cy, S, q, r):
     """
-    Average a 3×3 pixel region at cell (q,r) centre.
+    Sample a 5×5 pixel region at cell (q,r) centre; classify by median.
     Returns: 1 = dark (data bit 1), 0 = white (data bit 0), -1 = unused padding cell.
-    Unused cells are '#e8e8e8' (mean ≈ 232), white data-0 cells are '#ffffff' (mean ≈ 255).
+    Colours: dark=#111111 (≈17), white=#ffffff (≈255), grey-pad=#e8e8e8 (≈232).
+    5×5 median outvotes isolated edge/corner artefacts (apothem ≈0.82S > 3px half-size).
+    Threshold ≥244 for white and ≤100 for dark leave a gap (100..244) for grey-pad (232).
     """
     px = cx + S * 1.5 * q
     py = cy - S * (math.sqrt(3) / 2 * q + math.sqrt(3) * r)   # minus: y-flip
 
     x, y = int(round(px)), int(round(py))
     h, w = img_arr.shape[:2]
-    region = img_arr[max(0,y-1):y+2, max(0,x-1):x+2, :3]
-    if region.size == 0:
+    if not (0 <= x < w and 0 <= y < h):
         return -1
-    m = region.mean()
-    if m > 244:   # white  (#ffffff ≈ 255) → data bit 0
-        return 0
-    if m > 200:   # grey   (#e8e8e8 ≈ 232) → unused padding cell
+    half = 4
+    patch = img_arr[max(0, y - half):y + half + 1, max(0, x - half):x + half + 1, 0]
+    if patch.size == 0:
         return -1
-    return 1      # dark   (#111111 ≈ 17)  → data bit 1
+    ph, pw = patch.shape
+    cy_off = min(half, y)
+    cx_off = min(half, x)
+    ys = np.arange(ph) - cy_off
+    xs = np.arange(pw) - cx_off
+    mask = (ys[:, None] ** 2 + xs[None, :] ** 2) <= half * half
+    pixels = patch[mask]
+    if pixels.size == 0:
+        return -1
+    m = float(np.median(pixels))
+    if m >= 244:
+        return 0   # white
+    if m <= 100:
+        return 1   # dark
+    return -1      # grey pad (≈232)
 
 
 def decode_hexr(image_path):

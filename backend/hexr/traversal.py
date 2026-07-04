@@ -1,6 +1,4 @@
 import math
-import matplotlib.pyplot as plt
-from matplotlib.patches import Polygon
 
 
 # Six directions for walking clockwise around a hex ring (flat-top axial coords)
@@ -59,6 +57,8 @@ def verify_traversal(radius):
 
 def render_traversal(radius=4, cell_size=30, output_path="hexr_traversal.png"):
     """Draw the grid with each cell numbered in traversal order."""
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Polygon
     from hexr.grid import hex_to_pixel, hex_corners
 
     order = spiral_traversal(radius)
