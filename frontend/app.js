@@ -1,3 +1,10 @@
+// ── PWA: register service worker (enables Android "Add to Home Screen") ───────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+
 // ── Tab switching ────────────────────────────────────────────────────────────
 document.querySelectorAll('.tab').forEach(btn => {
   btn.addEventListener('click', () => {

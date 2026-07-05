@@ -1,13 +1,16 @@
 {
-  "name": "HexR",
+  "name": "Pradeep's HexR",
   "short_name": "HexR",
-  "description": "Generate and scan HexR codes",
+  "description": "Your personal hexagonal QR code — encode text and scan HexR codes.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#f5f5f5",
+  "orientation": "portrait",
+  "background_color": "#1a237e",
   "theme_color": "#1a237e",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
